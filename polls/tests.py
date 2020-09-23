@@ -7,6 +7,30 @@ from django.utils import timezone
 from .models import Question
 # Create your tests here.
 
+
+class QuestionDetailViewTests(TestCase):
+    def test_future_question(self):
+        """
+        The detail view of a question with a pub_date in the future returns a
+        404 not found.
+        """
+        future_question = create_question(question_text='Future question.', \
+        days=5)
+        url = reverse('polls:detail', args=(future_question.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_past_question(self):
+        """
+        The detail view of a question with a pub_date in the past displays the
+        question's text.
+        """
+        past_question = create_question(question_text='Past Question.', days=-5)
+        url = reverse('polls:detail', args=(past_question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, past_question.question_text)
+
+
 def create_question(question_text, days):
     """
     Create a question with a given 'question_text' and published the given
@@ -37,12 +61,12 @@ class QuestionIndexViewTests(TestCase):
         self.assertQuerysetEqual(response.context['latest_question_list'], \
         ['<Question: Past Question.>'])
 
-    def test_future_questions(self):
+    def test_future_question(self):
         """
         Questions with a pub_date in the future aren't displayed on the index
         page.
         """
-        create_question(question_text="Future Question.", days=30)
+        create_question(question_text="Future question.", days=30)
         response = self.client.get(reverse('polls:index'))
         self.assertContains(response, "No polls are available.")
 
@@ -57,7 +81,7 @@ class QuestionIndexViewTests(TestCase):
         create_question(question_text="Future Question.", days=30)
         response = self.client.get(reverse('polls:index'))
         self.assertQuerysetEqual(response.context['latest_question_list'], \
-            ['<Question: Past question.>'])
+            ['<Question: Past Question.>'])
 
     def test_two_past_questions(self):
         """
